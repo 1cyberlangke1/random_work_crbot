@@ -1359,8 +1359,9 @@ end ]]
 
 
 now_acc = min_acc;
-MAX_EVENT = 6;
+MAX_EVENT = 6; -- 最大事件数量
 outline_time = math.tointeger(config_page_1["单开下线时间"]);
+is_ignore_exception = math.tointeger(config_page_1["忽略异常开关"]);--0: 关 1:开 开启后有事件未完成就不会再重新来一次
 while true do
 	local state = {};
     local second = os.time();
@@ -1378,10 +1379,14 @@ while true do
         state[5] = main_ui_claim_rewards();remove_interference();
         state[6] = main_ui_daily_task();remove_interference();
         sleep(1000);
-        sum = 0;
-        for i=1,MAX_EVENT do 
-        	sum = sum + state[i];
-            if state[i] == 0 then start_game(); break; end
+        if is_ignore_exception == 0 then
+        	sum = 0;
+        	for i=1,MAX_EVENT do 
+        		sum = sum + state[i];
+            	if state[i] == 0 then start_game(); break; end
+        	end
+        else
+        	break;
         end
     end
     sleep(1000);
