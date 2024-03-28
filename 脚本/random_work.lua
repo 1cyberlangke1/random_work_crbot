@@ -1396,7 +1396,6 @@ while true do
         sleep(1000);
     end
     local sum = 0;
-    local sendtxt = "主人好喵~ (-ω-)つ<br>";
     while sum < MAX_EVENT do
     	local seconds = math.floor(tickCount() / 1000);
         local minutes = math.floor(seconds / 60);
@@ -1404,6 +1403,7 @@ while true do
         local days = math.floor(hours / 24);
         seconds = seconds % 60;
         minutes = minutes % 60;
+        local sendtxt = "主人好喵~ (-ω-)つ<br>";
     	if is_switch_acc == 0 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒"; end
         if is_switch_acc == 1 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒<br>".."总账号:"..(max_acc-min_acc+1).."<br>当前账号: 第"..(now_acc-min_acc+1).."个账号"; end
     	sendtxt = sendtxt .. "<br>希望主人有一个好的一天(> <)／";
