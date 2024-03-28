@@ -6,6 +6,7 @@ if screen_x==720 and screen_y==1280 and screen_dpi==320 then
 	toast("屏幕分辨率为: "..screen_x.."*"..screen_y.." DPI: "..screen_dpi.."\n支持的分辨率",0,0);
     sleep(1000);
     hideToast();
+    setControlBarPosNew(0, 0);
 else
 	toast("屏幕分辨率为: "..screen_x.."*"..screen_y.." DPI: "..screen_dpi.."\n为不支持的分辨率\n请设置为720*1280 DPI: 320",0,0);
     sleep(1000);
@@ -33,7 +34,7 @@ end
 
 sd_path = getSdPath();--Sd路径
 script_path = sd_path.."/random_work";--脚本文件夹路径
-
+script_data_path = script_path.."/data.txt";--脚本数据路径
 if fileExist(script_path) == false then
 	mkdir(script_path);
 end
@@ -42,6 +43,9 @@ if fileExist(script_path.."/data") == false then
 	mkdir(script_path.."/data");
 end
 
+if fileExist(script_data_path) == false then
+	exec("touch "..script_data_path);
+end
 game_package = config_page_1["启动包名"]--游戏包名
 ------------------------------------------------------------------------------------------------
 function cp_file(file1, file2)
@@ -352,10 +356,10 @@ function battle_L1(target_elixir, dirn, pos)
         	second = os.time();
             elixir = get_elixir();
             if elixir>0 then
-            	toast("当前圣水"..elixir, screen_x, 0);
+            	toast("当前圣水"..elixir, screen_x, screen_y);
             end
             if Debug == true then
-            	toast("当前圣水"..elixir, screen_x, 0);
+            	toast("当前圣水"..elixir, screen_x, screen_y);
             end
             if elixir >= target_elixir then
             	if dirn == 2 then 
@@ -1357,15 +1361,23 @@ end ]]
 --main_ui_battle();
 --main_ui_up_card();
 
-
-now_acc = min_acc;
+io.input(script_data_path);
+read_content = io.read();
+if read_content == null then now_acc = min_acc; else now_acc = math.tointeger(read_content); end
+io.close();
+if now_acc > max_acc then now_acc = max_acc; elseif now_acc < min_acc then now_acc = min_acc; end
 MAX_EVENT = 6; -- 最大事件数量
 outline_time = math.tointeger(config_page_1["单开下线时间"]);
 is_ignore_exception = math.tointeger(config_page_1["忽略异常开关"]);--0: 关 1:开 开启后有事件未完成就不会再重新来一次
+
 while true do
 	local state = {};
     local second = os.time();
     for i=1,MAX_EVENT do state[i] = 0; end
+    if is_switch_acc == 1 then 
+        acc_HUD_id = createHUD(); 
+        showHUD(acc_HUD_id,"账号"..now_acc,12,"0xffff0000","0xffffffff",0,screen_x,0,85,0);
+    end
     switch_acc(now_acc);
     if appIsFront(game_package) == false then start_game(); end
     local sum = 0;
@@ -1391,6 +1403,7 @@ while true do
     end
     sleep(1000);
     stopApp(game_package);
+    hideHUD(acc_HUD_id);
     second = os.time();
     while os.time() - second <= 10 do
     	local seconds = math.floor(tickCount() / 1000);
@@ -1419,6 +1432,9 @@ while true do
         end
     end
     if now_acc < max_acc then now_acc = now_acc + 1; else now_acc = min_acc; end
+    if is_switch_acc == 1 then
+    	writeFile(script_data_path,tostring(now_acc),false);
+    end
 end
 
 
