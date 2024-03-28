@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<lcprojit projname="random_work" is_acc_mode="0" appname="random_work" pkgname="com.random_work" bootrun="1" removeocr="1" ver="112" sel="0" cputype="6" op_rootmode="1" op_accmode="0" isrunrootenv="0" is_usedebug_activity="false" control_img_fill="0" is_notshow_hostui="0" is_volctrl="0" def_checked_nodeser="0" def_checked_recordlog="1" def_checked_useroot="1" not_show_float="0" del_ncnn="1" del_onnx="1" vir_wid="0" vir_hei="0">
+<lcprojit projname="random_work" is_acc_mode="0" appname="random_work" pkgname="com.random_work" bootrun="1" removeocr="1" ver="116" sel="0" cputype="6" op_rootmode="1" op_accmode="0" isrunrootenv="0" is_usedebug_activity="false" control_img_fill="0" is_notshow_hostui="0" is_volctrl="0" def_checked_nodeser="0" def_checked_recordlog="1" def_checked_useroot="1" not_show_float="0" del_ncnn="1" del_onnx="1" vir_wid="0" vir_hei="0">
     <lua entry="random_work.lua"/>
     <ui entry="random_work.ui"/>
     <rc entry="random_work.rc"/>

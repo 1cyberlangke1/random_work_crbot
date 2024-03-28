@@ -33,8 +33,10 @@ if Debug == true then
 end
 
 sd_path = getSdPath();--Sd路径
-script_path = sd_path.."/random_work";--脚本文件夹路径
+script_name = "random_work"--脚本名称
+script_path = sd_path.."/"..script_name;--脚本文件夹路径
 script_data_path = script_path.."/data.txt";--脚本数据路径
+
 if fileExist(script_path) == false then
 	mkdir(script_path);
 end
@@ -1338,6 +1340,42 @@ end
     1: 完成目标
     0: 未完成
 ]]
+
+import('com.nx.assist.lua.LuaEngine');
+import('com.nx.assist.lua.IOnMailResult');
+send_email_state = math.tointeger(config_page_1["发送邮件开关"]);--0: 关 1:开
+out_box = config_page_1["发件邮箱"];
+out_box_key = config_page_1["发件邮箱密码"];
+in_box = config_page_1["收件邮箱"];
+email_server = config_page_1["发件邮箱服务器"];
+function send_email(email_txt)
+	if send_email_state  == 0 then
+        toast("未开启发送邮件");
+        sleep(1000);
+        hideToast();
+        return nil;
+    end
+	LuaEngine.sendMail(out_box, out_box_key, in_box, email_server, true, script_name.."脚本运行提示", email_txt,  IOnMailResult{
+       onSuccess = function()
+          if Debug == true then print("邮件发送成功"); end
+          toast("邮件发送成功");
+          sleep(1000);
+          hideToast();
+       end,
+       onFailed = function(error_message)
+       	  if Debug == true then print("邮件发送失败 => " .. error_message); end
+          toast("邮件发送失败 => " .. error_message);
+          sleep(1000);
+          hideToast();
+       end
+    });
+end
+--[[
+	send_email()
+	发送邮件
+    email_txt: 发送内容
+]]
+
 ---------------------------------------------------------------------------------------------------------
 
 --battle_L1(10-math.tointeger(config_page_0["下牌时机_L1"]),math.tointeger(config_page_0["下牌方向_L1"]),math.tointeger(config_page_0["下牌位置_L1"]));
@@ -1381,7 +1419,18 @@ while true do
     switch_acc(now_acc);
     if appIsFront(game_package) == false then start_game(); end
     local sum = 0;
+    local sendtxt = "主人好喵~ (-ω-)つ<br>";
     while sum < MAX_EVENT do
+    	local seconds = math.floor(tickCount() / 1000);
+        local minutes = math.floor(seconds / 60);
+        local hours = math.floor(minutes / 60);
+        local days = math.floor(hours / 24);
+        seconds = seconds % 60;
+        minutes = minutes % 60;
+    	if is_switch_acc == 0 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒"; end
+        if is_switch_acc == 1 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒<br>".."总账号:"..(max_acc-min_acc+1).."<br>当前账号: 第"..(now_acc-min_acc+1).."个账号"; end
+    	sendtxt = sendtxt .. "<br>希望主人有一个好的一天(> <)／";
+        send_email(sendtxt);
     	remove_interference();
         remove_interference();
         state[1] = main_ui_up_card();remove_interference();
