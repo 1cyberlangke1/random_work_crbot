@@ -569,40 +569,13 @@ function switch_acc(now_acc)
     end
     stopApp(package_name);
     cp_file(acc_data_path.."/"..now_acc.."/shared_prefs", game_acc_data_path);
-    runApp(package_name);
-    toast("启动游戏");
-    sleep(500);
-    local second=os.time();
-    local ui = -1;
-    local out_time = false;
-    while true do
-   		toast("启动游戏: "..math.tointeger(os.time()-second).."秒\n".."当前账号: 账号"..math.tointeger(now_acc));
-        ui = get_main_ui();
-        if ui~= -1 then
-        	toast("成功进入游戏");
-            sleep(1000);
-        	break;
-        end
-        if os.time()-second>50 then
-        	out_time = true;
-            toast("超时");
-            sleep(1000);
-            break;
-        end
-    end
-    hideToast();
-    if out_time == false then
-    	return 1;
-    else 
-    	return 0;
-    end  
 end
 --[[
 	switch_acc(now_acc);
     切号
     now_acc: 要切换的第几个号(整数)
     nil: 未开启切号/启动包名不是国际服
-    0:账号不存在/超时
+    0:账号不存在
     1:成功切号
 ]]
 
@@ -869,7 +842,7 @@ function start_game()
         if os.time() - second >=50 then toast("超时");sleep(1000); break; end
     end
     hideToast();
-    if main_ui == -1 then return 1 else return 0; end
+    if main_ui == -1 then return 0 else return 1; end
 end
 --[[
 	start_game()
@@ -1417,7 +1390,11 @@ while true do
         showHUD(acc_HUD_id,"账号"..now_acc,12,"0xffff0000","0xffffffff",0,screen_x,0,85,0);
     end
     switch_acc(now_acc);
-    if appIsFront(game_package) == false then start_game(); end
+    local is_game_in_main_ui = 0;
+    while is_game_in_main_ui == 0 do
+    	is_game_in_main_ui = start_game();
+        sleep(1000);
+    end
     local sum = 0;
     local sendtxt = "主人好喵~ (-ω-)つ<br>";
     while sum < MAX_EVENT do
