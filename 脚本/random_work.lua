@@ -50,6 +50,24 @@ if fileExist(script_data_path) == false then
 end
 game_package = config_page_1["启动包名"]--游戏包名
 ------------------------------------------------------------------------------------------------
+function reboot()
+	exec("reboot");
+end
+--[[
+	reboot();
+    重启设备
+]]
+
+function now_time_str()
+	local str = os.date("%Y年%m月%d日 %H:%M:%S");
+    return str;
+end
+--[[
+	now_time_str();
+    当前设备时间
+    返回一个字符串
+]]
+
 function cp_file(file1, file2)
 	exec("cp -rf "..file1.." "..file2);
 end
@@ -219,6 +237,46 @@ end
     获取每日任务状态
     0:未打满
     1:打满/未识别
+]]
+
+function get_main_ui_chest_state()
+	local chest_state = {nil, nil, nil, nil};
+	sleep(500);
+    local ui = get_main_ui();
+    if ui == -1 then
+    	toast("未识别");
+        sleep(500);
+        hideToast();
+        return chest_state;
+    end
+	if ui ~= 3 then
+        if ui == 1 then rand_tap(385,1220,390,1225);
+        elseif ui == 2 then rand_tap(400,1215,405,1220);
+        elseif ui == 4 then rand_tap(280,1195,285,1200);
+        else rand_tap(300,1220,335,1225); end
+        sleep(2000);
+    end
+    local chest_x={60, 230, 410, 590};
+    for i=1,4 do
+    	local x,y = -1, -1;
+        ret,x,y=findPic(chest_x[i], 1000, chest_x[i]+80, 1100, "宝箱位_"..math.tointeger(i)..".png","101010",0,0.75);
+        if x ~=-1 and x~=-1 then
+        	chest_state[i] = 0;
+        else
+        	chest_state[i] = 1;
+        end
+    end
+    toast("宝箱位1:"..chest_state[1].."\n宝箱位2:"..chest_state[2].."\n宝箱位3:"..chest_state[3].."\n宝箱位4:"..chest_state[4]);
+    sleep(500);
+    hideToast();
+    return chest_state;
+end 
+--[[
+	get_main_ui_chest_state();
+    返回主页宝箱状态(数组)
+    nil:未识别到
+    0:无宝箱
+    1:有宝箱
 ]]
 
 function open_chest()
@@ -579,15 +637,78 @@ end
     1:成功切号
 ]]
 
-function get_main_ui_chest_state()
-	local chest_state = {nil, nil, nil, nil};
-	sleep(500);
-    local ui = get_main_ui();
+function start_game()
+	stopApp(game_package);
+    sleep(500)
+    runApp(game_package);
+    local main_ui = -1;
+    local second = os.time();
+    while main_ui == -1 do
+    	remove_interference();
+        main_ui = get_main_ui();
+        if main_ui ~= -1 then toast("成功启动游戏"); sleep(1000); break; end
+        if os.time() - second >15 then toast("未识别到界面"..os.time() - second.."秒");	sleep(1000);end
+        if os.time() - second >=50 then toast("超时");sleep(1000); break; end
+    end
+    hideToast();
+    if main_ui == -1 then return 0 else return 1; end
+end
+--[[
+	start_game()
+    启动/重启游戏
+    0:超时
+    1:成功
+]]
+
+import('com.nx.assist.lua.LuaEngine');
+import('com.nx.assist.lua.IOnMailResult');
+send_email_state = math.tointeger(config_page_1["发送邮件开关"]);--0: 关 1:开
+out_box = config_page_1["发件邮箱"];
+out_box_key = config_page_1["发件邮箱密码"];
+in_box = config_page_1["收件邮箱"];
+email_server = config_page_1["发件邮箱服务器"];
+function send_email(email_txt)
+	if send_email_state  == 0 then
+        toast("未开启发送邮件");
+        sleep(1000);
+        hideToast();
+        return nil;
+    end
+	LuaEngine.sendMail(out_box, out_box_key, in_box, email_server, true, script_name.."脚本运行提示", email_txt,  IOnMailResult{
+       onSuccess = function()
+          if Debug == true then print("邮件发送成功"); end
+          toast("邮件发送成功");
+          sleep(1000);
+          hideToast();
+       end,
+       onFailed = function(error_message)
+       	  if Debug == true then print("邮件发送失败 => " .. error_message); end
+          toast("邮件发送失败 => " .. error_message);
+          sleep(1000);
+          hideToast();
+       end
+    });
+end
+--[[
+	send_email()
+	发送邮件
+    email_txt: 发送内容
+]]
+
+open_chest_state = math.tointeger(config_page_0["开宝箱开关"]);--0: 关 1:开
+function main_ui_open_chest()
+	if open_chest_state == 0 then
+    	toast("未开启开宝箱");
+        sleep(1000);
+        hideToast();
+        return 1;
+    end
+	local ui = get_main_ui();
     if ui == -1 then
     	toast("未识别");
         sleep(500);
         hideToast();
-        return chest_state;
+        return 0;
     end
 	if ui ~= 3 then
         if ui == 1 then rand_tap(385,1220,390,1225);
@@ -596,29 +717,223 @@ function get_main_ui_chest_state()
         else rand_tap(300,1220,335,1225); end
         sleep(2000);
     end
-    local chest_x={60, 230, 410, 590};
-    for i=1,4 do
-    	local x,y = -1, -1;
-        ret,x,y=findPic(chest_x[i], 1000, chest_x[i]+80, 1100, "宝箱位_"..math.tointeger(i)..".png","101010",0,0.75);
-        if x ~=-1 and x~=-1 then
-        	chest_state[i] = 0;
-        else
-        	chest_state[i] = 1;
-        end
-    end
-    toast("宝箱位1:"..chest_state[1].."\n宝箱位2:"..chest_state[2].."\n宝箱位3:"..chest_state[3].."\n宝箱位4:"..chest_state[4]);
+    toast("开箱");
     sleep(500);
     hideToast();
-    return chest_state;
-end 
+    local second = os.time();
+    while (true) do
+    	remove_interference();
+    	ret,x,y = findPic(10,1080,710,1150,"开箱按钮.png","101010",0,0.9);
+        if x~=-1 and y~=-1 then
+        	rand_tap(x+5,y+5,x+10,y+10);
+            toast("开启宝箱");
+            hideToast();
+            sleep(1000);
+        	open_chest();
+            second=os.time();
+        end
+        toast("寻找箱子中", screen_x, 0);
+		if os.time()- second >= 5 then
+        	toast("结束开箱");
+            sleep(1000);
+            hideToast();
+            break;
+       	end
+        sleep(500);
+    end
+    local chest_x = {125, 250, 390, 570};
+	for i=1,4 do
+    	remove_interference();
+        rand_tap( chest_x[i], 1000, chest_x[i], 1020);
+        toast("查看第"..i.."个箱子");
+        sleep(2000);
+    	ret,x,y = findPic(0, 0,screen_x,screen_y,"解锁按钮.png","101010",0,0.9);
+        if x~=-1 and y~=-1 then
+        	rand_tap(x+5,y+5,x+10,y+10);
+            toast("解锁");
+            sleep(1000);
+            hideToast();
+        end
+        tap(516, 74);
+        sleep(1000);
+    end
+    return 1;
+end
+
 --[[
-	get_main_ui_chest_state();
-    返回主页宝箱状态(数组)
-    nil:未识别到
-    0:无宝箱
-    1:有宝箱
+	main_ui_open_chest()
+	开/解锁箱
+    1: 完成目标
+    0: 未完成
 ]]
 
+daily_deal_state = math.tointeger(config_page_0["领日常奖励开关"]);--0: 关 1:开
+function main_ui_daily_deal()
+	if daily_deal_state == 0 then
+    	toast("未开启领商店日常奖励");
+        sleep(1000);
+        hideToast();
+        return 1;
+    end
+	local ui = get_main_ui();
+    if ui == -1 then
+    	toast("未识别");
+        sleep(500);
+        hideToast();
+        return 0;
+    end
+	if ui ~= 1 then
+    	rand_tap(20,1190,80,1250);
+        sleep(2000);
+    end
+    local second = os.time();
+    local x, y = -1, -1;
+    while true do
+    	remove_interference();
+    	ret,x,y = findPic(0,0,screen_x,screen_y,"商店免费_1.png|商店免费_2.png","101010",0,0.9);
+        if x==-1 and y==-1 then swipe(340+rnd(-5,5),600+rnd(-5,5),340+rnd(-5,5),500+rnd(-5,5),50); end
+        if x~=-1 and y~=-1 then
+			rand_tap(x, y, x+5, y+5);
+        	toast("领取");
+            sleep(1000);
+            hideToast();
+            second = os.time();
+        end
+    	ret,x,y = findPic(270,730,445,1010,"免费领取按钮.png","101010",0,0.9);
+        if x~=-1 and y~=-1 then
+        	rand_tap(x, y, x+5, y+5);
+        	toast("领取");
+            sleep(1000);
+            hideToast();
+            second = os.time();
+        end
+		ret,x,y=findPic(0, 0,screen_x,screen_y,"关闭按钮_1.png","101010",0,0.75);
+		if x~=-1 and y~=-1 then
+    		toast("关闭按钮");
+    		rand_tap(x+5,y+5,x+10,y+10);
+        	sleep(1000);
+        	second = os.time();
+    	end
+		ret,x,y = findPic(280,1030,390,1100,"开箱界面标识_1.png","101010",0,0.8);
+		if x~=-1 and y~=-1 then
+        	open_chest();
+            second = os.time();
+    	end
+		ret,x,y = findPic(260,0,430,110,"开箱界面标识_2.png","101010",0,0.8);
+		if x~=-1 and y~=-1 then
+        	open_chest();
+            second = os.time();
+    	end
+		ret,x,y = findPic(300,940,410,995,"开箱界面标识_3.png","101010",0,0.8);
+		if x~=-1 and y~=-1 then
+        	open_chest();
+            second = os.time();
+    	end
+    	if os.time() - second >= 20 then break; end
+        sleep(250);
+   	end
+    toast("结束领商店日常奖励");
+    sleep(1000);
+    hideToast();
+    return 1;
+end
+--[[
+	main_ui_battle()
+	领取商店日常奖励
+    1: 完成目标
+    0: 未完成
+]]
+
+claim_rewards_state = math.tointeger(config_page_0["领令牌奖励开关"]);--0: 关 1:开
+function main_ui_claim_rewards()
+	remove_interference();
+	if claim_rewards_state == 0 then
+    	toast("未开启领令牌奖励");
+        sleep(1000);
+        hideToast();
+        return 1;
+    end
+	local ui = get_main_ui();
+    if ui == -1 then
+    	toast("未识别令牌");
+        sleep(500);
+        hideToast();
+        return 0;
+    end
+	if ui ~= 3 then
+    	if ui == 1 then rand_tap(510,1190,570,1250);
+        elseif ui == 2 then rand_tap(380,1175,460,1260);
+        elseif ui == 4 then rand_tap(270,1175,335,1255);
+        else rand_tap(265,1175,340,1255); end
+        sleep(2000);
+    end
+    local second = os.time();
+    local x, y = -1, -1;
+    local is_rewards = false;
+    while true do
+    	if os.time()-second>=30 then
+        	toast("无可领奖励");
+            sleep(500);
+            hideToast();
+            break;
+        end
+        ret,x,y = findPic(0,0,screen_x,screen_y,"令牌奖励.png","101010",0,0.8);
+        if x~=-1 and y~=-1 then
+        	toast("可领奖励");
+            rand_tap(x, y, x+5, y+5);
+            sleep(500);
+            hideToast();
+            is_rewards = true;
+            break;
+        end
+        toast("识别令牌奖励"..os.time()-second.."秒");
+        sleep(100);
+    end
+    if is_rewards == false then return 1; end
+    second = os.time();
+    while true do
+    	ret,x,y = findPic(120,240,240,290,"领取令牌奖励.png","101010",0,0.8);
+        if x~=-1 and y~=-1 then
+        	rand_tap(x, y, x+5, y+5);
+            sleep(1000);
+            os.time();
+        end
+		ret,x,y = findPic(50,170,220,1150,"令牌奖励领取.png","101010",0,0.8);
+        if x~=-1 and y~=-1 then
+        	rand_tap(x, y, x+5, y+5);
+            os.time();
+        end
+		ret,x,y = findPic(280,1030,390,1100,"开箱界面标识_1.png","101010",0,0.8);
+		if x~=-1 and y~=-1 then
+        	open_chest();
+            second = os.time();
+    	end
+		ret,x,y = findPic(260,0,430,110,"开箱界面标识_2.png","101010",0,0.8);
+		if x~=-1 and y~=-1 then
+        	open_chest();
+            second = os.time();
+    	end
+		ret,x,y = findPic(300,940,410,995,"开箱界面标识_3.png","101010",0,0.8);
+		if x~=-1 and y~=-1 then
+        	open_chest();
+            second = os.time();
+    	end
+        if os.time() - second >= 5 then toast("未识别到奖励"..os.time() - second.."秒"); end
+    	if os.time() - second >= 20 then break; end
+        sleep(250);
+    end
+    toast("结束领令牌奖励");
+    sleep(1000);
+    hideToast();
+    remove_interference();
+    return 1;
+end
+--[[
+	main_ui_claim_rewards()
+    领取令牌奖励
+    1: 完成目标
+    0: 未完成
+]]
 
 battle_state = math.tointeger(config_page_0["对战开关"]);--0: 关 1:开
 battle_target = math.tointeger(config_page_0["打什么"]);--0: 皇室征程 1: 传奇之路
@@ -828,269 +1143,6 @@ end
     0: 未完成
 ]]
 
-function start_game()
-	stopApp(game_package);
-    sleep(500)
-    runApp(game_package);
-    local main_ui = -1;
-    local second = os.time();
-    while main_ui == -1 do
-    	remove_interference();
-        main_ui = get_main_ui();
-        if main_ui ~= -1 then toast("成功启动游戏"); sleep(1000); break; end
-        if os.time() - second >15 then toast("未识别到界面"..os.time() - second.."秒");	sleep(1000);end
-        if os.time() - second >=50 then toast("超时");sleep(1000); break; end
-    end
-    hideToast();
-    if main_ui == -1 then return 0 else return 1; end
-end
---[[
-	start_game()
-    启动/重启游戏
-    0:超时
-    1:成功
-]]
-
-open_chest_state = math.tointeger(config_page_0["开宝箱开关"]);--0: 关 1:开
-function main_ui_open_chest()
-	if open_chest_state == 0 then
-    	toast("未开启开宝箱");
-        sleep(1000);
-        hideToast();
-        return 1;
-    end
-	local ui = get_main_ui();
-    if ui == -1 then
-    	toast("未识别");
-        sleep(500);
-        hideToast();
-        return 0;
-    end
-	if ui ~= 3 then
-        if ui == 1 then rand_tap(385,1220,390,1225);
-        elseif ui == 2 then rand_tap(400,1215,405,1220);
-        elseif ui == 4 then rand_tap(280,1195,285,1200);
-        else rand_tap(300,1220,335,1225); end
-        sleep(2000);
-    end
-    toast("开箱");
-    sleep(500);
-    hideToast();
-    local second = os.time();
-    while (true) do
-    	remove_interference();
-    	ret,x,y = findPic(10,1080,710,1150,"开箱按钮.png","101010",0,0.9);
-        if x~=-1 and y~=-1 then
-        	rand_tap(x+5,y+5,x+10,y+10);
-            toast("开启宝箱");
-            hideToast();
-            sleep(1000);
-        	open_chest();
-            second=os.time();
-        end
-        toast("寻找箱子中", screen_x, 0);
-		if os.time()- second >= 5 then
-        	toast("结束开箱");
-            sleep(1000);
-            hideToast();
-            break;
-       	end
-        sleep(500);
-    end
-    local chest_x = {125, 250, 390, 570};
-	for i=1,4 do
-    	remove_interference();
-        rand_tap( chest_x[i], 1000, chest_x[i], 1020);
-        toast("查看第"..i.."个箱子");
-        sleep(2000);
-    	ret,x,y = findPic(0, 0,screen_x,screen_y,"解锁按钮.png","101010",0,0.9);
-        if x~=-1 and y~=-1 then
-        	rand_tap(x+5,y+5,x+10,y+10);
-            toast("解锁");
-            sleep(1000);
-            hideToast();
-        end
-        tap(516, 74);
-        sleep(1000);
-    end
-    return 1;
-end
-
---[[
-	main_ui_battle()
-	开/解锁箱
-    1: 完成目标
-    0: 未完成
-]]
-
-daily_deal_state = math.tointeger(config_page_0["领日常奖励开关"]);--0: 关 1:开
-function main_ui_daily_deal()
-	if daily_deal_state == 0 then
-    	toast("未开启领商店日常奖励");
-        sleep(1000);
-        hideToast();
-        return 1;
-    end
-	local ui = get_main_ui();
-    if ui == -1 then
-    	toast("未识别");
-        sleep(500);
-        hideToast();
-        return 0;
-    end
-	if ui ~= 1 then
-    	rand_tap(20,1190,80,1250);
-        sleep(2000);
-    end
-    local second = os.time();
-    local x, y = -1, -1;
-    while true do
-    	remove_interference();
-    	ret,x,y = findPic(0,0,screen_x,screen_y,"商店免费_1.png|商店免费_2.png","101010",0,0.9);
-        if x==-1 and y==-1 then swipe(340+rnd(-5,5),600+rnd(-5,5),340+rnd(-5,5),500+rnd(-5,5),50); end
-        if x~=-1 and y~=-1 then
-			rand_tap(x, y, x+5, y+5);
-        	toast("领取");
-            sleep(1000);
-            hideToast();
-            second = os.time();
-        end
-    	ret,x,y = findPic(270,730,445,1010,"免费领取按钮.png","101010",0,0.9);
-        if x~=-1 and y~=-1 then
-        	rand_tap(x, y, x+5, y+5);
-        	toast("领取");
-            sleep(1000);
-            hideToast();
-            second = os.time();
-        end
-		ret,x,y=findPic(0, 0,screen_x,screen_y,"关闭按钮_1.png","101010",0,0.75);
-		if x~=-1 and y~=-1 then
-    		toast("关闭按钮");
-    		rand_tap(x+5,y+5,x+10,y+10);
-        	sleep(1000);
-        	second = os.time();
-    	end
-		ret,x,y = findPic(280,1030,390,1100,"开箱界面标识_1.png","101010",0,0.8);
-		if x~=-1 and y~=-1 then
-        	open_chest();
-            second = os.time();
-    	end
-		ret,x,y = findPic(260,0,430,110,"开箱界面标识_2.png","101010",0,0.8);
-		if x~=-1 and y~=-1 then
-        	open_chest();
-            second = os.time();
-    	end
-		ret,x,y = findPic(300,940,410,995,"开箱界面标识_3.png","101010",0,0.8);
-		if x~=-1 and y~=-1 then
-        	open_chest();
-            second = os.time();
-    	end
-    	if os.time() - second >= 20 then break; end
-        sleep(250);
-   	end
-    toast("结束领商店日常奖励");
-    sleep(1000);
-    hideToast();
-    return 1;
-end
---[[
-	main_ui_battle()
-	领取商店日常奖励
-    1: 完成目标
-    0: 未完成
-]]
-
-claim_rewards_state = math.tointeger(config_page_0["领令牌奖励开关"]);--0: 关 1:开
-function main_ui_claim_rewards()
-	remove_interference();
-	if claim_rewards_state == 0 then
-    	toast("未开启领令牌奖励");
-        sleep(1000);
-        hideToast();
-        return 1;
-    end
-	local ui = get_main_ui();
-    if ui == -1 then
-    	toast("未识别令牌");
-        sleep(500);
-        hideToast();
-        return 0;
-    end
-	if ui ~= 3 then
-    	if ui == 1 then rand_tap(510,1190,570,1250);
-        elseif ui == 2 then rand_tap(380,1175,460,1260);
-        elseif ui == 4 then rand_tap(270,1175,335,1255);
-        else rand_tap(265,1175,340,1255); end
-        sleep(2000);
-    end
-    local second = os.time();
-    local x, y = -1, -1;
-    local is_rewards = false;
-    while true do
-    	if os.time()-second>=30 then
-        	toast("无可领奖励");
-            sleep(500);
-            hideToast();
-            break;
-        end
-        ret,x,y = findPic(0,0,screen_x,screen_y,"令牌奖励.png","101010",0,0.8);
-        if x~=-1 and y~=-1 then
-        	toast("可领奖励");
-            rand_tap(x, y, x+5, y+5);
-            sleep(500);
-            hideToast();
-            is_rewards = true;
-            break;
-        end
-        toast("识别令牌奖励"..os.time()-second.."秒");
-        sleep(100);
-    end
-    if is_rewards == false then return 1; end
-    second = os.time();
-    while true do
-    	ret,x,y = findPic(120,240,240,290,"领取令牌奖励.png","101010",0,0.8);
-        if x~=-1 and y~=-1 then
-        	rand_tap(x, y, x+5, y+5);
-            sleep(1000);
-            os.time();
-        end
-		ret,x,y = findPic(50,170,220,1150,"令牌奖励领取.png","101010",0,0.8);
-        if x~=-1 and y~=-1 then
-        	rand_tap(x, y, x+5, y+5);
-            os.time();
-        end
-		ret,x,y = findPic(280,1030,390,1100,"开箱界面标识_1.png","101010",0,0.8);
-		if x~=-1 and y~=-1 then
-        	open_chest();
-            second = os.time();
-    	end
-		ret,x,y = findPic(260,0,430,110,"开箱界面标识_2.png","101010",0,0.8);
-		if x~=-1 and y~=-1 then
-        	open_chest();
-            second = os.time();
-    	end
-		ret,x,y = findPic(300,940,410,995,"开箱界面标识_3.png","101010",0,0.8);
-		if x~=-1 and y~=-1 then
-        	open_chest();
-            second = os.time();
-    	end
-        if os.time() - second >= 5 then toast("未识别到奖励"..os.time() - second.."秒"); end
-    	if os.time() - second >= 20 then break; end
-        sleep(250);
-    end
-    toast("结束领令牌奖励");
-    sleep(1000);
-    hideToast();
-    remove_interference();
-    return 1;
-end
---[[
-	main_ui_claim_rewards()
-    领取令牌奖励
-    1: 完成目标
-    0: 未完成
-]]
-
 daily_task_state = math.tointeger(config_page_0["领任务奖励开关"]);--0: 关 1:开
 function main_ui_daily_task()
 	if daily_task_state == 0 then
@@ -1187,11 +1239,13 @@ function main_ui_up_card()
     sleep(1000);
     swipe(340+rnd(-5,5),600+rnd(-5,5),340+rnd(-5,5),1000+rnd(-5,5),500);
     sleep(2000);
-    local card_x={130, 260, 450, 630, 110, 270, 440, 620};
-    local card_y={470, 480, 490, 470, 760, 750, 760, 760};
+    local card_x={130, 260, 450, 630, 110, 270, 440, 620, 580};
+    local card_y={470, 480, 490, 470, 760, 750, 760, 760, 1075};
     local ui = get_main_ui();
-    for i=1,8 do
+    for i=1,9 do
+        sleep(1000);
     	remove_interference();
+        sleep(1000);
         ui = get_main_ui();
         if ui ~= 2 then 
         	toast("未在收藏界面");
@@ -1201,63 +1255,66 @@ function main_ui_up_card()
         end
     	rand_tap(card_x[i],card_y[i],card_x[i]+5,card_y[i]+5);
         toast("检查第"..i.."号位");
-        sleep(1000);
+        sleep(1500);
         hideToast();
         ret,x,y=findPic(0,0,screen_x,screen_y, "升级卡牌_1.png","101010",0,0.75);
         if x~=-1 and y~=-1 then
         	rand_tap(x, y, x+5, y+5);
             toast("卡牌足够");
-            sleep(1500);
-            hideToast();
+            sleep(2000);
         end
  		ret,x,y=findPic(0,0,screen_x,screen_y, "升级卡牌_2.png","101010",0,0.75);
         if x~=-1 and y~=-1 then
         	rand_tap(x, y, x+5, y+5);
             toast("卡牌足够");
-            sleep(1500);
-            hideToast();
+            sleep(2000);
         end
         ret,x,y=findPic(0,0,screen_x,screen_y, "确定升级卡牌_1.png","101010",0,0.75);
         if x~=-1 and y~=-1 then
             rand_tap(x, y, x+5, y+5);
             toast("确定升级卡牌");
-            sleep(1500);
-            hideToast();
+            sleep(3000);
         end
 		ret,x,y=findPic(0,0,screen_x,screen_y, "确定升级卡牌_2.png","101010",0,0.75);
         if x~=-1 and y~=-1 then
             rand_tap(x, y, x+5, y+5);
             toast("确定升级卡牌");
-            sleep(1500);
-            hideToast();
+            sleep(3000);
         end
         ret,x,y=findPic(0, 0,screen_x,screen_y,"升级卡牌确定_1.png","101010",0,0.75);
         if x~=-1 and y~=-1 then
         	rand_tap(x, y, x+5, y+5);
             toast("升级卡牌确定");
-            sleep(1500);
+            sleep(3500);
+            ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
+            if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); end
+            hideToast();
         end
         ret,x,y=findPic(0, 0,screen_x,screen_y,"升级卡牌确定_2.png","101010",0,0.75);
         if x~=-1 and y~=-1 then
         	rand_tap(x, y, x+5, y+5);
             toast("升级卡牌确定");
-            sleep(1500);
+            sleep(3500);
+            ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
+            if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); end
+            hideToast();
         end
         ret,x,y=findPic(0, 0,screen_x,screen_y,"升级卡牌确定_3.png","101010",0,0.75);
         if x~=-1 and y~=-1 then
         	rand_tap(x, y, x+5, y+5);
             toast("升级卡牌确定");
-            sleep(1500);
+            sleep(3500);
+            ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
+            if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); end
+            hideToast();
         end
         ret,x,y=findPic(0, 0,screen_x,screen_y,"升级卡牌确定_1.png","101010",0,0.75);
 		if x~=-1 and y~=-1 then
             rand_tap(x, y, x+5, y+5);
             toast("升级卡牌确定");
-            while true do
-            	sleep(2000);
-            	ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
-                if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); else break; end
-            end
+            sleep(3500);
+            ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
+            if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); end
             hideToast();
             goto continue;
         end
@@ -1265,11 +1322,9 @@ function main_ui_up_card()
 		if x~=-1 and y~=-1 then
             rand_tap(x, y, x+5, y+5);
             toast("升级卡牌确定");
-            while true do
-            	sleep(3000);
-            	ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
-                if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); else break; end
-            end
+            sleep(3500);
+            ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
+            if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); end
             hideToast();
             goto continue;
         end
@@ -1277,11 +1332,9 @@ function main_ui_up_card()
 		if x~=-1 and y~=-1 then
             rand_tap(x, y, x+5, y+5);
             toast("升级卡牌确定");
-            while true do
-            	sleep(3000);
-            	ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
-                if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); else break; end
-            end
+            sleep(3500);
+            ret,x,y=findPic(0,0,screen_x,screen_y,"升级卡牌界面标识.png","101010",0,0.75);
+            if x~=-1 and y~=-1 then	rand_tap(0,0,screen_x,screen_y); end
             hideToast();
             goto continue;
         end
@@ -1314,40 +1367,6 @@ end
     0: 未完成
 ]]
 
-import('com.nx.assist.lua.LuaEngine');
-import('com.nx.assist.lua.IOnMailResult');
-send_email_state = math.tointeger(config_page_1["发送邮件开关"]);--0: 关 1:开
-out_box = config_page_1["发件邮箱"];
-out_box_key = config_page_1["发件邮箱密码"];
-in_box = config_page_1["收件邮箱"];
-email_server = config_page_1["发件邮箱服务器"];
-function send_email(email_txt)
-	if send_email_state  == 0 then
-        toast("未开启发送邮件");
-        sleep(1000);
-        hideToast();
-        return nil;
-    end
-	LuaEngine.sendMail(out_box, out_box_key, in_box, email_server, true, script_name.."脚本运行提示", email_txt,  IOnMailResult{
-       onSuccess = function()
-          if Debug == true then print("邮件发送成功"); end
-          toast("邮件发送成功");
-          sleep(1000);
-          hideToast();
-       end,
-       onFailed = function(error_message)
-       	  if Debug == true then print("邮件发送失败 => " .. error_message); end
-          toast("邮件发送失败 => " .. error_message);
-          sleep(1000);
-          hideToast();
-       end
-    });
-end
---[[
-	send_email()
-	发送邮件
-    email_txt: 发送内容
-]]
 
 ---------------------------------------------------------------------------------------------------------
 
@@ -1371,6 +1390,9 @@ end ]]
 --main_ui_open_chest();
 --main_ui_battle();
 --main_ui_up_card();
+--reboot();
+--print(now_time_str());
+
 
 io.input(script_data_path);
 read_content = io.read();
@@ -1390,10 +1412,17 @@ while true do
         showHUD(acc_HUD_id,"账号"..now_acc,12,"0xffff0000","0xffffffff",0,screen_x,0,85,0);
     end
     switch_acc(now_acc);
+    local try_run_count = 1;
     local is_game_in_main_ui = 0;
     while is_game_in_main_ui == 0 do
-    	is_game_in_main_ui = start_game();
+        toast("尝试启动游戏次数: "..try_run_count);
         sleep(1000);
+    	is_game_in_main_ui = start_game();
+        if is_game_in_main_ui == 0 then try_run_count = try_run_count + 1 else try_run_count = 1; end
+        if try_run_count >= 10 then
+        	send_email("主人好喵~ (-ω-)つ<br>脚本异常, 尝试重启设备解决<br>希望主人有一个好的一天(> <)／<br>"..now_time_str());
+            reboot();
+        end
     end
     local sum = 0;
     while sum < MAX_EVENT do
@@ -1404,8 +1433,8 @@ while true do
         seconds = seconds % 60;
         minutes = minutes % 60;
         local sendtxt = "主人好喵~ (-ω-)つ<br>";
-    	if is_switch_acc == 0 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒"; end
-        if is_switch_acc == 1 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒<br>".."总账号:"..(max_acc-min_acc+1).."<br>当前账号: 第"..(now_acc-min_acc+1).."个账号"; end
+    	if is_switch_acc == 0 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒<br>"..now_time_str(); end
+        if is_switch_acc == 1 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒<br>".."总账号:"..(max_acc-min_acc+1).."<br>当前账号: 第"..(now_acc-min_acc+1).."个账号<br>"..now_time_str(); end
     	sendtxt = sendtxt .. "<br>希望主人有一个好的一天(> <)／";
         send_email(sendtxt);
     	remove_interference();
