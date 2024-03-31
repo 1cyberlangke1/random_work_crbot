@@ -502,6 +502,22 @@ function remove_interference()
         hideToast();
         return 1;
     end
+	ret,x,y=findPic(90,720,210,760,"重新加载.png","101010",0,0.75);
+    if x~=-1 and y~=-1 then
+    	toast("重新加载");
+    	rand_tap(100,730,200,755);
+        sleep(5000);
+        hideToast();
+        return 1;
+    end
+	ret,x,y=findPic(110,720,170,760,"重试.png","101010",0,0.75);
+    if x~=-1 and y~=-1 then
+    	toast("重试");
+    	rand_tap(120,730,160,750);
+        sleep(5000);
+        hideToast();
+        return 1;
+    end
 	ret,x,y=findPic(350,770,460,800,"不再提示.png","101010",0,0.75);
     if x~=-1 and y~=-1 then
     	toast("不再提示");
@@ -1361,13 +1377,51 @@ function main_ui_up_card()
     return 1;
 end
 --[[
-	main_ui_claim_rewards()
+	main_ui_up_card()
     升级卡牌
     1: 完成目标
     0: 未完成
 ]]
 
-
+up_card_state = math.tointeger(config_page_0["领取卡牌大师开关"]);--0: 关 1:开
+function main_ui_card_master_rewards()
+	if up_card_state  == 0 then
+    	toast("领取卡牌大师");
+        sleep(1000);
+        hideToast();
+        return 1;
+    end
+    local ui  = get_main_ui();
+	if ui == -1 then
+    	toast("未识别");
+        sleep(500);
+        hideToast();
+        return 0;
+    end
+    local x, y = -1, -1;
+    if ui ~= 2 then rand_tap(300, 1200, 305, 1205);
+    	if ui == 1 then rand_tap(175, 1195, 180, 1200);
+        elseif ui == 3 then rand_tap(185, 1200, 190, 1205);
+        elseif ui == 4 then rand_tap(185, 1200, 305, 1205);
+        else rand_tap(180, 1205, 305, 1210); end
+    end
+    sleep(1000);
+    rand_tap(185,120,240,150);
+    sleep(1000);
+    swipe(340+rnd(-5,5),600+rnd(-5,5),340+rnd(-5,5),1000+rnd(-5,5),500);
+    sleep(1000);
+    swipe(340+rnd(-5,5),600+rnd(-5,5),340+rnd(-5,5),1000+rnd(-5,5),500);
+    sleep(1000);
+    swipe(340+rnd(-5,5),600+rnd(-5,5),340+rnd(-5,5),1000+rnd(-5,5),500);
+    sleep(2000);
+    
+end
+--[[
+	main_ui_up_card()
+    领取卡牌大师
+    1: 完成目标
+    0: 未完成
+]]
 ---------------------------------------------------------------------------------------------------------
 
 --battle_L1(10-math.tointeger(config_page_0["下牌时机_L1"]),math.tointeger(config_page_0["下牌方向_L1"]),math.tointeger(config_page_0["下牌位置_L1"]));
@@ -1421,6 +1475,7 @@ while true do
         if is_game_in_main_ui == 0 then try_run_count = try_run_count + 1 else try_run_count = 1; end
         if try_run_count >= 10 then
         	send_email("主人好喵~ (-ω-)つ<br>脚本异常, 尝试重启设备解决<br>希望主人有一个好的一天(> <)／<br>"..now_time_str());
+            sleep(3000);
             reboot();
         end
     end
