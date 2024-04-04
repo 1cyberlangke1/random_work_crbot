@@ -502,7 +502,7 @@ function remove_interference()
         hideToast();
         return 1;
     end
-	ret,x,y=findPic(90,720,210,760,"重新加载.png","101010",0,0.75);
+	ret,x,y=findPic(0,0,210,760,"重新加载.png","101010",0,0.75);
     if x~=-1 and y~=-1 then
     	toast("重新加载");
     	rand_tap(100,730,200,755);
@@ -510,18 +510,18 @@ function remove_interference()
         hideToast();
         return 1;
     end
-	ret,x,y=findPic(110,720,170,760,"重试.png","101010",0,0.75);
+	ret,x,y=findPic(0, 0,screen_x,screen_y,"重试.png","101010",0,0.75);
     if x~=-1 and y~=-1 then
     	toast("重试");
-    	rand_tap(120,730,160,750);
+    	rand_tap(x+5,y+5,x+10,y+10);
         sleep(5000);
         hideToast();
         return 1;
     end
-	ret,x,y=findPic(350,770,460,800,"不再提示.png","101010",0,0.75);
+	ret,x,y=findPic(0, 0,screen_x,screen_y,"不再提示.png","101010",0,0.75);
     if x~=-1 and y~=-1 then
     	toast("不再提示");
-    	rand_tap(355,775,450,790);
+    	rand_tap(x+5,y+5,x+10,y+10);
         sleep(5000);
         hideToast();
         return 1;
@@ -1487,6 +1487,7 @@ while true do
         local days = math.floor(hours / 24);
         seconds = seconds % 60;
         minutes = minutes % 60;
+        hours = hours % 24;
         local sendtxt = "主人好喵~ (-ω-)つ<br>";
     	if is_switch_acc == 0 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒<br>"..now_time_str(); end
         if is_switch_acc == 1 then sendtxt = sendtxt.."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒<br>".."总账号:"..(max_acc-min_acc+1).."<br>当前账号: 第"..(now_acc-min_acc+1).."个账号<br>"..now_time_str(); end
