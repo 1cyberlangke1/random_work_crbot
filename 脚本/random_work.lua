@@ -1383,6 +1383,7 @@ end
     0: 未完成
 ]]
 
+// TODO
 up_card_rewards_state = math.tointeger(config_page_0["领取卡牌大师开关"]);--0: 关 1:开
 function main_ui_card_master_rewards()
 	if up_card_rewards_state  == 0 then
