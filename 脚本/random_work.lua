@@ -1224,7 +1224,7 @@ end
     0: 未完成
 ]]
 
-up_card_state = math.tointeger(config_page_0["升级卡牌开关"]);--0: 关 1:开
+up_card_state = math.tointeger(config_page_0["升级卡牌开关"]);--0:关 1:开
 function main_ui_up_card()
 	if up_card_state  == 0 then
     	toast("未开启升级卡牌");
@@ -1383,10 +1383,10 @@ end
     0: 未完成
 ]]
 
-up_card_state = math.tointeger(config_page_0["领取卡牌大师开关"]);--0: 关 1:开
+up_card_rewards_state = math.tointeger(config_page_0["领取卡牌大师开关"]);--0: 关 1:开
 function main_ui_card_master_rewards()
-	if up_card_state  == 0 then
-    	toast("领取卡牌大师");
+	if up_card_rewards_state  == 0 then
+    	toast("未开启领取卡牌大师");
         sleep(1000);
         hideToast();
         return 1;
