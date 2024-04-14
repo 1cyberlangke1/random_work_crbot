@@ -1383,7 +1383,7 @@ end
     0: 未完成
 ]]
 
-// TODO
+-- TODO
 up_card_rewards_state = math.tointeger(config_page_0["领取卡牌大师开关"]);--0: 关 1:开
 function main_ui_card_master_rewards()
 	if up_card_rewards_state  == 0 then
@@ -1475,7 +1475,14 @@ while true do
     	is_game_in_main_ui = start_game();
         if is_game_in_main_ui == 0 then try_run_count = try_run_count + 1 else try_run_count = 1; end
         if try_run_count >= 10 then
-        	send_email("主人好喵~ (-ω-)つ<br>脚本异常, 尝试重启设备解决<br>希望主人有一个好的一天(> <)／<br>"..now_time_str());
+        	local seconds = math.floor(tickCount() / 1000);
+            local minutes = math.floor(seconds / 60);
+            local hours = math.floor(minutes / 60);
+            local days = math.floor(hours / 24);
+            seconds = seconds % 60;
+            minutes = minutes % 60;
+            hours = hours % 24;
+        	send_email("主人好喵~ (-ω-)つ<br>脚本异常, 尝试重启设备解决<br>希望主人有一个好的一天(> <)／<br>".."脚本已运行<br>"..days.."天"..hours.."小时"..minutes.."分钟"..seconds.."秒<br>"..now_time_str());
             sleep(3000);
             reboot();
         end
